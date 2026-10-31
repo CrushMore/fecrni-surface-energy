@@ -1,0 +1,20 @@
+# usage: lmp -in bulk_NPT.in -var seed 11 -var T 300 -var nrep 5
+units           metal
+atom_style      atomic
+boundary        p p p
+read_data       ../data/bulk_N500_seed${seed}.data
+pair_style      eam/alloy
+pair_coeff      * * ../potentials/FeNiCr_Bonny_2013_ptDef.eam.alloy Fe Cr Ni
+neighbor        2.0 bin
+timestep        0.002
+
+velocity        all create ${T} ${seed} dist gaussian
+fix             npt all npt temp ${T} ${T} 0.2 iso 0.0 0.0 2.0
+thermo          1000
+run             20000
+
+variable        pe equal pe/atoms
+variable        lx equal lx/${nrep}
+fix             avg all ave/time 10 100 1000 v_pe v_lx file ../data/npt_bulk_T${T}_s${seed}.txt
+run             50000
+print           "RESULT_NPT T ${T} seed ${seed} E_per_atom $(f_avg[1]) a $(f_avg[2])"
